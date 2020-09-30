@@ -1,0 +1,35 @@
+---
+title: "test"
+author: "Zhourong Li zl2977"
+date: "2020/9/30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(100)
+A<-data.frame(
+"x" = c(1,2,3,4,5,5,5,6,7,8,9,9,9),
+"y" = c(1,2,3,4,5,5,5,8,9,10,11,11,11)
+)
+
+# typeof(x)
+# typeof(y)
+# A %>% distinct(x,y)
+distinct(A,x,y)
+
+```
+
+```{r}
+nyctransit_df = 
+  read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
+  janitor::clean_names() %>%
+  select(line, station_name, station_latitude, station_longitude, route1:route11, entrance_type, entry, vending, ada) %>%
+  mutate(entry = ifelse(entry == "YES", TRUE, FALSE))
+diststation_df = distinct(nyctransit_df, line, station_name, .keep_all = TRUE)
+sum(nyctransit_df$vending == "NO" & nyctransit_df$entry == "TRUE")/sum(nyctransit_df$vending == "NO")
+
+```
