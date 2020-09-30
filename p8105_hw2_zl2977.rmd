@@ -143,9 +143,9 @@ proportion=nrow(entrance_without_vending)/total_vend_no
 ```
 There are `r nrow(distinct1)` distinct stations, `r sum(pull(distinct1,ada) == TRUE)` stations are ADA compliant. The proportion of station entrances/ exits without vending alow entrance is `r proportion`.
 ```{r,warning=FALSE,message=FALSE}
-sum(pull(distinct1,route_name) == "A")
+#sum(pull(distinct1,route_name) == "A")
 adacomp=sum(pull(distinct1,route_name) == "A" & pull(distinct1,ada)=="TRUE")
-adacomp
+
 ```
 There are `r sum(pull(distinct1,route_name) == "A")` distinct stations serve the A train. Of the stations that serve the A train, `r adacomp` are ADA compliant.
 
