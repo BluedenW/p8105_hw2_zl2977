@@ -5,11 +5,12 @@ date: "2020/9/29"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE,warning=FALSE,message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readxl)
 library(dplyr)
+library(knitr)
 ```
 
 
@@ -19,14 +20,14 @@ library(dplyr)
 
 First, define a path to the dataset. 
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 path_to_data = "./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx"
 ```
 
 
 Read the Mr. Trashwheel dataset. 
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 trashwheel_df = 
 	read_xlsx(
 		path = path_to_data,
@@ -42,7 +43,7 @@ trashwheel_df =
 
 Read precipitation data! For 2018 and 2017. 
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 precip_2018 = 
 	read_excel(
 		"./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
@@ -68,7 +69,7 @@ precip_2017 =
 
 Now combine annual precipitation dataframes. In the following code chunk, I create a "helper" tibble that contains pairs of numeric and character ways of representing month, and then merge that (using month number as a key) with the precipitation dataset. This technique is one I use often when I need to recode a moderate or large number of values for a variable. 
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 month_df = 
 	tibble(
 		month = 1:12,
@@ -90,25 +91,17 @@ This dataset contains information from the Mr. Trashwheel trash collector in Bal
 * The total precipitation in 2018 was `r precip_df %>% filter(year == 2018) %>% pull(total) %>% sum()` inches.
 
 ## Problem 2
-```{r}
-nyc_sub=
-  read_csv(
-    "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv"
-  )
 
 
-```
-
-```{r}
+```{r,warning=FALSE,message=FALSE}
 
 nyc_sub=
   read_csv(
     "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv"
   )%>%
 
-  # mutate(Route8=as.character(Route8))
   mutate(across(where(is.numeric)&starts_with("R"), as.character))%>%
-  #change type of Route 8 to 11 from numeric type to char type since pivot_longer #function only combines same types of columns, where Route 1-7 are char types from #the beginning
+  #Route 1-7 are char types, we change type of Route 8 to 11  to char type as well since pivot_longer function only combines same types of columns
   janitor::clean_names() %>%
   pivot_longer(
     route1:route11,
@@ -121,21 +114,23 @@ nyc_sub=
           route_name,entry,vending,entrance_type,ada)%>%
   mutate(entry=ifelse(entry=="YES",TRUE,FALSE))
 
+nyc_sub_raw=
+  read_csv(
+    "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv"
+  )
 
+#show the first 6 lines of the nyc_sub table after tidying and reformatting
+kable(head(nyc_sub,n=6))
 ```
 
 The dataset contains information about each entrance and exit for each subway station in NYC. The
-dataset contains division, line, station name, station latitude/longitude, routes, entrance types, entry information, exit only information, vending, staffing, staff hours, ADA information, free crossover information, and other specific station and entrance location information. So far I have loaded the data, cleaned up the column names, fixed the spreading of the routes served.There are `r nrow(nyc_sub)` rows and `r ncol(nyc_sub)` in this dataset, in total there are `r nrow(nyc_sub)*ncol(nyc_sub)` data in this dataset. These data are tidy now.
+dataset contains division, line, station name, station latitude/longitude, routes, entrance types, entry information, exit only information, vending, staffing, staff hours, ADA information, free crossover information, and other specific station and entrance location information. So far I have loaded the data, cleaned up the column names, fixed the spreading of the routes served (reformat data so that route number and route name are distinct variables). Without cleaning and reformatting there are `r nrow(nyc_sub_raw)` rows and `r ncol(nyc_sub_raw)` columns in this dataset, in total there are `r nrow(nyc_sub_raw)*ncol(nyc_sub_raw)` data. After cleaning and reformatting there are `r nrow(nyc_sub)` rows and `r ncol(nyc_sub)` columns in this dataset, in total there are `r nrow(nyc_sub)*ncol(nyc_sub)` data. These data are tidy now.
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 nyc_sub %>% distinct(line,station_name,.keep_all=TRUE)->distinct1
-nrow(distinct1)
-sum(pull(distinct1,ada) == TRUE)
-
-
 ```
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 origin_nyc_sub=
   read_csv(
     "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv"
@@ -145,32 +140,20 @@ origin_nyc_sub=
 origin_nyc_sub%>%filter(entry=="YES"& vending=="NO")->entrance_without_vending
 total_vend_no=sum(pull(origin_nyc_sub,vending)=="NO")
 proportion=nrow(entrance_without_vending)/total_vend_no
-proportion
 ```
-There are `r nrow(distinct1)` distinct stations, `r sum(pull(distinct1,ada) == TRUE)` stations are ADA compliant. The proportion of station entrances/ exits without vending alow entrance is `r proportion`
-```{r}
+There are `r nrow(distinct1)` distinct stations, `r sum(pull(distinct1,ada) == TRUE)` stations are ADA compliant. The proportion of station entrances/ exits without vending alow entrance is `r proportion`.
+```{r,warning=FALSE,message=FALSE}
 sum(pull(distinct1,route_name) == "A")
-# sum(pull(nyc_sub,route_name) == "A", na.rm = T)
-# pull(nyc_sub,route_name)
-# pull(distinct1,route_name)
 adacomp=sum(pull(distinct1,route_name) == "A" & pull(distinct1,ada)=="TRUE")
+adacomp
 ```
 There are `r sum(pull(distinct1,route_name) == "A")` distinct stations serve the A train. Of the stations that serve the A train, `r adacomp` are ADA compliant.
 
-##Problem 3
+## Problem 3
 
-```{r}
-library(dplyr)
-pols_month=
-   read_csv(
-      "./data/fivethirtyeight_datasets/pols-month.csv"
-    ) %>%
-separate(mon,c("year","month","day"))%>%
-mutate(month=month.abb[pull(pols_month,month)])
-```
 
-```{r}
-pols_month=
+```{r,warning=FALSE,message=FALSE}
+pols=
    read_csv(
       "./data/fivethirtyeight_datasets/pols-month.csv"
     )%>%
@@ -179,38 +162,53 @@ pols_month=
    mutate(month=month.abb[month])%>%
    mutate(president=ifelse(prez_dem==1,"dem","gop"))
 
-pols_month=subset(pols_month,select=-c(prez_gop,prez_dem))
-pols_month=subset(pols_month,select=-c(day))
+pols=subset(pols,select=-c(prez_gop,prez_dem))
+pols=subset(pols,select=-c(day))
 
-pols_month
-str(pols_month)
-
+#show the first 6 lines of the pols table
+kable(head(pols,n=6))
 ```
-```{r}
+```{r,warning=FALSE,message=FALSE}
 
 snp=read_csv(
       "./data/fivethirtyeight_datasets/snp.csv"
     )%>%
    separate(date,c("month","day","year"))%>%
-   mutate(month=as.numeric(month))
+   mutate(month=as.numeric(month))%>%
+   subset(select=-c(day))%>%
+   arrange(year,month)%>%
+   mutate(month=month.abb[month])%>%
+   relocate(year,month) 
 
-snp=subset(snp,select=-c(day))
-snp=arrange(snp,year,month)
-snp=mutate(snp,month=month.abb[month])
 
+#show the first 6 lines of the snp table
+kable(head(snp,n=6))
 ```
 
 
 
-```{r}
-set.seed(12)
-df <- data.frame(month = sample(12), x = LETTERS[1:12])
+```{r,warning=FALSE,message=FALSE}
+unemployment=read_csv(
+      "./data/fivethirtyeight_datasets/unemployment.csv"
+  )%>%
+  rename(year=Year)%>%
+  mutate(year=as.character(year))%>%
+  pivot_longer(
+    Jan:Dec,
+    names_to="month",
+    values_to="unemployment"
+  )
 
-month.name
-# factor(month.name[month], levels = month.name)
-
-df %>%  mutate(month = factor(month.name[month], levels = month.name)) 
-
-# df
+#show the first 6 lines of the unemployment table
+kable(head(unemployment,n=6))
 ```
 
+```{r,warning=FALSE,message=FALSE}
+merge1<-left_join(pols, snp)
+merge_all<-left_join(merge1,unemployment)
+
+#show the first 6 lines of the merge_all table
+kable(head(merge_all,n=6))
+```
+
+The dataset "pols" contains `r colnames(pols)`, it has `r nrow(pols)` rows and `r ncol(pols)` columns, in total there are `r nrow(pols)*ncol(pols)` data in the "pols" dataset, the start year and end year of the "pols" dataset is `r range(pull(pols,year))`. The dataset "snp" contains `r colnames(snp)`, it has `r nrow(snp)` rows and `r ncol(snp)` columns, in total there are `r nrow(snp)*ncol(snp)` data in the "snp" dataset, the start year and end year of the "snp" dataset is `r range(pull(snp,year))`. The dataset "unemployment" contains `r colnames(unemployment)`, it has `r nrow(unemployment)` rows and `r ncol(unemployment)` columns, in total there are `r nrow(unemployment)*ncol(unemployment)` data in the "unemployment" dataset, the start year and end year of the "unemployment" dataset is `r range(pull(unemployment,year))`. The resulting dataset after merging these three datasets contains `r colnames(merge_all)`, it has `r nrow(merge_all)` rows and `r ncol(merge_all)` columns, in total there are `r nrow(merge_all)*ncol(merge_all)` data in the "merge_all" dataset, the start year and end year of the "merge_all" dataset is `r range(pull(merge_all,year))`. 
